@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import io.github.atipurde.devradar.ui.trends.TrendsScreen
+import io.github.atipurde.devradar.ui.trends.TrendsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -41,6 +42,8 @@ class MainActivity : ComponentActivity() {
             DevRadarTheme {
                 val interestsViewModel: InterestsViewModel = viewModel()
                 val uiState by interestsViewModel.uiState.collectAsStateWithLifecycle()
+                val trendsViewModel: TrendsViewModel = viewModel()
+                val trendsUiState by trendsViewModel.uiState.collectAsStateWithLifecycle()
                 var selectedTab by rememberSaveable { mutableStateOf(0) }
 
 
@@ -73,7 +76,37 @@ class MainActivity : ComponentActivity() {
 
                         when {
                             selectedTab == 1 -> {
-                                TrendsScreen(trends = emptyList())
+                                val trendsErrorMessage = trendsUiState.errorMessage
+
+                                when {
+                                    trendsUiState.isLoading -> {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.align(Alignment.Center)
+                                        )
+                                    }
+
+                                    trendsErrorMessage != null -> {
+                                        Column(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(text = trendsErrorMessage)
+
+                                            TextButton(
+                                                onClick = trendsViewModel::loadTrends
+                                            ) {
+                                                Text(text = "Erneut versuchen")
+                                            }
+                                        }
+                                    }
+
+                                    else -> {
+                                        TrendsScreen(trends = trendsUiState.trends)
+                                    }
+                                }
                             }
                             uiState.isLoading -> {
                                 CircularProgressIndicator(
